@@ -1,6 +1,7 @@
 package com.tcc.model;
 
-import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.List;
 
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -11,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -32,7 +34,7 @@ public class Postagem {
 	private String texto;
 	
 	@UpdateTimestamp
-	private LocalDate data;
+	private ZonedDateTime data;
 	
 	@ManyToOne
 	@JsonIgnoreProperties("postagem")
@@ -41,7 +43,11 @@ public class Postagem {
 	@ManyToOne
 	@JsonIgnoreProperties("postagem")
 	private Usuario usuario;
-
+	
+	@OneToMany(mappedBy = "postagem", cascade = jakarta.persistence.CascadeType.REMOVE)
+	@JsonIgnoreProperties("postagem")
+	private List<Comentario> comentarios;
+	
 	public Long getId() {
 		return id;
 	}
@@ -66,11 +72,11 @@ public class Postagem {
 		this.texto = texto;
 	}
 
-	public LocalDate getData() {
+	public ZonedDateTime getData() {
 		return data;
 	}
 
-	public void setData(LocalDate data) {
+	public void setData(ZonedDateTime data) {
 		this.data = data;
 	}
 
@@ -89,5 +95,13 @@ public class Postagem {
 	public void setUsuario(Usuario usuario) {
 		this.usuario = usuario;
 	}
-	
+
+	public List<Comentario> getComentarios() {
+		return comentarios;
+	}
+
+	public void setComentarios(List<Comentario> comentarios) {
+		this.comentarios = comentarios;
+	}
+
 }

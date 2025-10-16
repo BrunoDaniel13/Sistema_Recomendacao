@@ -23,12 +23,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class BasicSecurityConfig {
 
-	@Autowired
+    @Autowired
     private JwtAuthFilter authFilter;
 
     @Bean
     UserDetailsService userDetailsService() {
-
         return new UserDetailsServiceImpl();
     }
 
@@ -54,24 +53,36 @@ public class BasicSecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-    	http
-	        .sessionManagement(management -> management
-	                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-	        		.csrf(csrf -> csrf.disable())
-	        		.cors(withDefaults());
+        http
+            .sessionManagement(management -> management
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .csrf(csrf -> csrf.disable())
+            .cors(withDefaults());
 
-    	http
-	        .authorizeHttpRequests((auth) -> auth
-	                .requestMatchers("/usuarios/logar").permitAll()
-	                .requestMatchers("/usuarios/cadastrar").permitAll()
-	                .requestMatchers("/error/**").permitAll()
-	                .requestMatchers(HttpMethod.OPTIONS).permitAll()
-	                .anyRequest().authenticated())
-	        .authenticationProvider(authenticationProvider())
-	        .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
-	        .httpBasic(withDefaults());
+        http
+            .authorizeHttpRequests(auth -> auth
+                // 🔓 Rotas públicas
+                .requestMatchers("/usuarios/logar").permitAll()
+                .requestMatchers("/usuarios/cadastrar").permitAll()
+                .requestMatchers("/error/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/postagens/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/temas/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/avaliacoes/media/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/comentarios/**").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS).permitAll()
 
-		return http.build();
+                // 🔒 Somente usuários logados podem comentar
+                .requestMatchers(HttpMethod.POST, "/comentarios/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/comentarios/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/comentarios/**").authenticated()
 
+                // 🔒 Outras rotas
+                .anyRequest().authenticated()
+            )
+            .authenticationProvider(authenticationProvider())
+            .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
+            .httpBasic(withDefaults());
+
+        return http.build();
     }
 }

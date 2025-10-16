@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,6 +47,7 @@ public class PostagemController {
 				.map(resposta -> ResponseEntity.ok(resposta))
 				.orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
 	}
+
 	@GetMapping("/titulo/{titulo}")
 	public ResponseEntity<List<Postagem>> getByTitulo(@PathVariable String titulo){
 		return ResponseEntity.ok(postagemRepository.findAllByTituloContainingIgnoreCase(titulo));
@@ -54,32 +56,49 @@ public class PostagemController {
 	@PostMapping
 	public ResponseEntity<Postagem> post(@Valid @RequestBody Postagem postagem){
 		if(temasRepository.existsById(postagem.getTemas().getId()))
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(postagemRepository.save(postagem));
+			return ResponseEntity.status(HttpStatus.CREATED)
+					.body(postagemRepository.save(postagem));
 		
 		throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Tema não existe!", null);
 	}
 	
 	@PutMapping
-	public ResponseEntity<Postagem> put(@Valid @RequestBody Postagem postagem){
-		if(postagemRepository.existsById(postagem.getId())) {
-			
-		if (temasRepository.existsById(postagem.getTemas().getId())) 
-		return ResponseEntity.status(HttpStatus.OK)
-						.body(postagemRepository.save(postagem));
-		
-		throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Tema não existe!", null);
+	public ResponseEntity<Postagem> put(@Valid @RequestBody Postagem postagem, Authentication authentication){
+		if(!postagemRepository.existsById(postagem.getId())) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		
+		if (!temasRepository.existsById(postagem.getTemas().getId())) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Tema não existe!", null);
+		}
+
+		// Recupera o usuário logado pelo JWT
+		String usuarioLogado = authentication.getName();
+		Postagem existente = postagemRepository.findById(postagem.getId()).get();
+
+		// Verifica se a postagem pertence ao usuário logado
+		if (!existente.getUsuario().getUsuario().equals(usuarioLogado)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você só pode editar suas próprias postagens!");
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(postagemRepository.save(postagem));
 	}
 	
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@DeleteMapping("/{id}")
-	public void delete(@PathVariable Long id) {
+	public void delete(@PathVariable Long id, Authentication authentication) {
 		Optional<Postagem> postagem = postagemRepository.findById(id);
 		
 		if(postagem.isEmpty())
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+
+		// Recupera usuário logado
+		String usuarioLogado = authentication.getName();
+
+		// Só permite deletar se for dono da postagem
+		if (!postagem.get().getUsuario().getUsuario().equals(usuarioLogado)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você só pode deletar suas próprias postagens!");
+		}
 		
 		postagemRepository.deleteById(id);
 	}
