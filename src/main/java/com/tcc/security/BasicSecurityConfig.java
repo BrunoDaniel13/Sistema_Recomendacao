@@ -65,16 +65,14 @@ public class BasicSecurityConfig {
                 .requestMatchers("/usuarios/logar").permitAll()
                 .requestMatchers("/usuarios/cadastrar").permitAll()
                 .requestMatchers("/error/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/postagens/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/temas/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/avaliacoes/media/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/comentarios/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/**").permitAll() // 🔥 LIBERA TODOS OS GETS
                 .requestMatchers(HttpMethod.OPTIONS).permitAll()
 
-                // 🔒 Somente usuários logados podem comentar
+                // 🔒 Somente usuários logados podem criar/editar/deletar
                 .requestMatchers(HttpMethod.POST, "/comentarios/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/comentarios/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/comentarios/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/avaliacoes/**").authenticated()
 
                 // 🔒 Outras rotas
                 .anyRequest().authenticated()

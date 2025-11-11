@@ -4,104 +4,71 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 import org.hibernate.annotations.UpdateTimestamp;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "tb_postagens")
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Postagem {
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	@NotBlank
-	@Size(min = 3, max = 100)
-	private String titulo;
-	
-	@NotBlank
-	@Size(min = 5, max = 1000)
-	private String texto;
-	
-	@UpdateTimestamp
-	private ZonedDateTime data;
-	
-	@ManyToOne
-	@JsonIgnoreProperties("postagem")
-	private Temas temas;
-	
-	@ManyToOne
-	@JsonIgnoreProperties("postagem")
-	private Usuario usuario;
-	
-	@OneToMany(mappedBy = "postagem", cascade = jakarta.persistence.CascadeType.REMOVE)
-	@JsonIgnoreProperties("postagem")
-	private List<Comentario> comentarios;
-	
-	public Long getId() {
-		return id;
-	}
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	public String getTitulo() {
-		return titulo;
-	}
+    @NotBlank
+    @Size(min = 3, max = 100)
+    private String titulo;
 
-	public void setTitulo(String titulo) {
-		this.titulo = titulo;
-	}
+    @NotBlank
+    @Size(min = 5, max = 1000)
+    private String texto;
 
-	public String getTexto() {
-		return texto;
-	}
+    @UpdateTimestamp
+    private ZonedDateTime data;
 
-	public void setTexto(String texto) {
-		this.texto = texto;
-	}
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JsonIgnoreProperties({ "postagens" }) // evita loop Tema -> Postagem -> Tema
+    private Temas temas;
 
-	public ZonedDateTime getData() {
-		return data;
-	}
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JsonIgnoreProperties({ "postagens", "senha" }) // evita loop Usuario -> Postagem -> Usuario
+    private Usuario usuario;
 
-	public void setData(ZonedDateTime data) {
-		this.data = data;
-	}
+    @OneToMany(mappedBy = "postagem", cascade = CascadeType.REMOVE)
+    @JsonIgnoreProperties({ "postagem", "usuario" }) // evita loop nos comentários
+    private List<Comentario> comentarios;
 
-	public Temas getTemas() {
-		return temas;
-	}
+    // 🔹 NOVO RELACIONAMENTO — avaliações ligadas à postagem
+    @OneToMany(mappedBy = "postagem", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @JsonIgnoreProperties({ "postagem", "usuario" })
+    private List<Avaliacao> avaliacoes;
 
-	public void setTemas(Temas temas) {
-		this.temas = temas;
-	}
+    // Getters e Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-	public Usuario getUsuario() {
-		return usuario;
-	}
+    public String getTitulo() { return titulo; }
+    public void setTitulo(String titulo) { this.titulo = titulo; }
 
-	public void setUsuario(Usuario usuario) {
-		this.usuario = usuario;
-	}
+    public String getTexto() { return texto; }
+    public void setTexto(String texto) { this.texto = texto; }
 
-	public List<Comentario> getComentarios() {
-		return comentarios;
-	}
+    public ZonedDateTime getData() { return data; }
+    public void setData(ZonedDateTime data) { this.data = data; }
 
-	public void setComentarios(List<Comentario> comentarios) {
-		this.comentarios = comentarios;
-	}
+    public Temas getTemas() { return temas; }
+    public void setTemas(Temas temas) { this.temas = temas; }
 
+    public Usuario getUsuario() { return usuario; }
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+
+    public List<Comentario> getComentarios() { return comentarios; }
+    public void setComentarios(List<Comentario> comentarios) { this.comentarios = comentarios; }
+
+    public List<Avaliacao> getAvaliacoes() { return avaliacoes; }
+    public void setAvaliacoes(List<Avaliacao> avaliacoes) { this.avaliacoes = avaliacoes; }
 }
